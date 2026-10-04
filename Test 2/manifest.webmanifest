@@ -1,0 +1,41 @@
+{
+  "name": "RiceTracker \u2014 Navarra Grain Center",
+  "short_name": "RiceTracker",
+  "description": "Rice inventory, sales till and reports for Navarra Grain Center.",
+  "start_url": "login.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F5EEDC",
+  "theme_color": "#2E2A22",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Cashier Till",
+      "url": "ricetrack-cashier.html"
+    },
+    {
+      "name": "Owner Dashboard",
+      "url": "ricetrack-owner.html"
+    }
+  ]
+}

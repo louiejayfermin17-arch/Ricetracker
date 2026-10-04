@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#2E2A22" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="RiceTracker" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<title>RiceTracker — Navarra Grain Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ricetrack.css">
+<style>
+  /* =========================================================
+     LOGIN — a paddy field that changes with the role.
+     Cashier  = morning, opening the shop.
+     Owner    = dusk, reviewing the day.
+     ========================================================= */
+  html, body{ height:100%; }
+  body{ margin:0; background:#1d2e2a; font-family:'Inter',sans-serif; color:var(--ink); overflow-x:hidden; }
+
+  .lg-root{
+    position:relative; min-height:100vh; min-height:100dvh; overflow:hidden;
+    --accent:#C1652F; --accent-soft:rgba(193,101,47,0.18);
+    --hero-text:#2E2A22; --hero-sub:rgba(46,42,34,0.72);
+    --hill-far:#A9B777; --hill-mid:#7E9B55; --hill-near:#5B8248;
+    --stem:#6E8F3E; --grain:#D3A92E; --cloud:rgba(255,255,255,0.7);
+    --sun-glow:rgba(255,214,120,0.55);
+    --mx:0;
+  }
+  .lg-root[data-role="owner"]{
+    --accent:#4F7942; --accent-soft:rgba(79,121,66,0.2);
+    --hero-text:#F5EEDC; --hero-sub:rgba(245,238,220,0.78);
+    --hill-far:#4A6446; --hill-mid:#34503A; --hill-near:#223A29;
+    --stem:#4A6A38; --grain:#E0BE55; --cloud:rgba(180,200,190,0.16);
+    --sun-glow:rgba(238,140,64,0.5);
+  }
+
+  /* ---------- scene ---------- */
+  .scene{ position:absolute; inset:0; z-index:0; }
+  .sky{ position:absolute; inset:0; transition:opacity 1.3s ease; }
+  .sky-day{ background:linear-gradient(180deg,#F8E6BC 0%,#F2BE78 52%,#E58F55 100%); }
+  .sky-dusk{ background:linear-gradient(180deg,#1B2A2C 0%,#364F43 46%,#C98E3E 100%); opacity:0; }
+  .lg-root[data-role="owner"] .sky-dusk{ opacity:1; }
+
+  .stars{ position:absolute; inset:0 0 50% 0; opacity:0; transition:opacity 1.4s ease; }
+  .lg-root[data-role="owner"] .stars{ opacity:1; }
+  .stars i{ position:absolute; width:2px; height:2px; border-radius:50%; background:#FFF6D6; animation:twinkle 3.5s ease-in-out infinite; }
+  @keyframes twinkle{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
+
+  .sun-wrap{
+    position:absolute; left:53%; top:12%;
+    transform:translate3d(calc(var(--mx) * -6px),0,0);
+    transition:left 1.6s cubic-bezier(.5,.1,.2,1), top 1.6s cubic-bezier(.5,.1,.2,1);
+  }
+  .lg-root[data-role="owner"] .sun-wrap{ left:46%; top:40%; }
+  @media (max-width: 899px){
+    .sun-wrap{ left:56%; top:4%; }
+    .lg-root[data-role="owner"] .sun-wrap{ left:12%; top:9%; }
+  }
+  .lg-root.leaving .sun-wrap{ top:2%; transition-duration:1.1s; }
+  .sun{
+    position:relative; width:clamp(90px,13vw,170px); aspect-ratio:1; border-radius:50%;
+    box-shadow:0 0 0 16px rgba(255,255,255,.08), 0 0 100px 44px var(--sun-glow);
+    transition:box-shadow 1.4s ease;
+    animation:sunrise 2.2s cubic-bezier(.2,.75,.2,1) both, breathe 7s ease-in-out 2.2s infinite;
+  }
+  .sun::before, .sun::after{ content:""; position:absolute; inset:0; border-radius:50%; transition:opacity 1.4s ease; }
+  .sun::before{ background:radial-gradient(circle at 38% 34%,#FFF7D1,#F9CB5E 70%); }
+  .sun::after{ background:radial-gradient(circle at 38% 34%,#FFD684,#E8742F 75%); opacity:0; }
+  .lg-root[data-role="owner"] .sun::after{ opacity:1; }
+  @keyframes sunrise{ from{ transform:translateY(46vh); opacity:0; } to{ transform:translateY(0); opacity:1; } }
+  @keyframes breathe{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.045); } }
+
+  .cloud{ position:absolute; height:clamp(26px,4vw,46px); border-radius:999px; background:var(--cloud); transition:background .9s ease; animation:drift linear infinite; }
+  .cloud::before,.cloud::after{ content:""; position:absolute; background:inherit; border-radius:50%; }
+  .cloud::before{ width:46%; height:150%; left:14%; top:-60%; }
+  .cloud::after{ width:34%; height:120%; left:48%; top:-35%; }
+  .cloud.c1{ width:clamp(120px,16vw,220px); top:9%; left:-25%; animation-duration:110s; }
+  .cloud.c2{ width:clamp(90px,12vw,170px); top:24%; left:-25%; animation-duration:150s; animation-delay:-60s; opacity:.8; }
+  .cloud.c3{ width:clamp(100px,14vw,190px); top:5%; left:-25%; animation-duration:130s; animation-delay:-100s; opacity:.6; }
+  @keyframes drift{ from{ transform:translateX(0); } to{ transform:translateX(160vw); } }
+
+  .hills{ position:absolute; left:0; right:0; bottom:0; height:58%; transform:translate3d(calc(var(--mx) * -8px),0,0) scale(1.03); }
+  .hills svg{ width:100%; height:100%; display:block; }
+  .hills path{ transition:fill 1.3s ease; }
+  .h-far{ fill:var(--hill-far); } .h-mid{ fill:var(--hill-mid); } .h-near{ fill:var(--hill-near); }
+
+  .field{ position:absolute; left:0; right:0; bottom:-2px; pointer-events:none; }
+  .field svg{ width:100%; height:100%; display:block; }
+  .field-back{ height:clamp(130px,27vh,270px); transform:translate3d(calc(var(--mx) * -12px),0,0) scale(1.04); opacity:.85; }
+  .field-front{ height:clamp(150px,31vh,310px); transform:translate3d(calc(var(--mx) * -22px), var(--ly,0px), 0) scale(1.06); transition:transform .9s ease; }
+  .lg-root.leaving .field-front{ --ly:22px; }
+  .stem{ stroke:var(--stem); transition:stroke 1.2s ease; fill:none; stroke-linecap:round; }
+  .head{ fill:var(--grain); transition:fill 1.2s ease; }
+  .sw{ transform-box:fill-box; transform-origin:50% 100%; animation:sway 5s ease-in-out infinite alternate; }
+  @keyframes sway{ from{ transform:rotate(-1.8deg); } to{ transform:rotate(2.3deg); } }
+
+  .grains{ position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+  .grains b{ position:absolute; top:-5%; width:5px; height:11px; border-radius:50%; background:#E8C560; opacity:0; animation:fall linear infinite; }
+  @keyframes fall{
+    0%{ transform:translate3d(0,-8vh,0) rotate(0deg); opacity:0; }
+    10%{ opacity:.75; }
+    50%{ transform:translate3d(22px,52vh,0) rotate(160deg); }
+    90%{ opacity:.55; }
+    100%{ transform:translate3d(-14px,108vh,0) rotate(320deg); opacity:0; }
+  }
+
+  /* ---------- layout ---------- */
+  .lg-stage{
+    position:relative; z-index:2; min-height:100vh; min-height:100dvh;
+    display:grid; grid-template-columns:1fr; align-items:center; justify-items:center;
+    padding:max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+    max-width:1180px; margin:0 auto; gap:2rem;
+  }
+  .lg-hero{ display:none; transition:opacity .25s ease, transform .25s ease; }
+  .lg-hero.swap{ opacity:0; transform:translateY(8px); }
+  .lg-hero h2{
+    font-family:'Fraunces',serif; font-weight:600; letter-spacing:-0.015em; line-height:1.04;
+    font-size:clamp(2.3rem,4.6vw,3.9rem); max-width:12em; margin:0 0 1rem; color:var(--hero-text);
+    transition:color 1.2s ease;
+  }
+  .lg-hero p{ font-size:1.05rem; line-height:1.55; max-width:26rem; margin:0; color:var(--hero-sub); transition:color 1.2s ease; }
+  @media (min-width: 900px){
+    .lg-stage{ grid-template-columns:1.15fr minmax(360px,26rem); justify-items:stretch; gap:3rem; }
+    .lg-hero{ display:block; align-self:start; padding-top:clamp(2rem,13vh,9rem); }
+    .lg-card{ justify-self:end; }
+  }
+
+  /* ---------- card ---------- */
+  .lg-card{
+    width:100%; max-width:26rem; position:relative;
+    background:rgba(255,252,245,0.9); -webkit-backdrop-filter:blur(16px) saturate(1.2); backdrop-filter:blur(16px) saturate(1.2);
+    border:1px solid rgba(255,255,255,0.55); border-radius:1.5rem;
+    box-shadow:0 44px 80px -34px rgba(20,16,10,.6), 0 2px 0 rgba(255,255,255,.6) inset;
+    padding:clamp(1.3rem,3vw,2rem);
+    animation:cardIn 1s cubic-bezier(.2,.8,.2,1) .5s both;
+  }
+  @keyframes cardIn{ from{ opacity:0; transform:translateY(26px) scale(.98); } to{ opacity:1; transform:none; } }
+  .lg-card.shake{ animation:shake .45s cubic-bezier(.36,.07,.19,.97) both; }
+  @keyframes shake{ 10%,90%{ transform:translateX(-2px); } 20%,80%{ transform:translateX(4px); } 30%,50%,70%{ transform:translateX(-7px); } 40%,60%{ transform:translateX(7px); } }
+  .lg-root.leaving .lg-card{ animation:cardOut .75s cubic-bezier(.5,0,.8,.4) forwards; }
+  @keyframes cardOut{ to{ opacity:0; transform:translateY(-18px) scale(.96); } }
+
+  .lg-brand{ display:flex; align-items:center; gap:.8rem; margin-bottom:1.3rem; }
+  .lg-logo{
+    width:2.9rem; height:2.9rem; border-radius:.85rem; display:grid; place-items:center; flex:none;
+    background:linear-gradient(155deg,var(--husk),var(--gold)); color:#2E2A22;
+    font-family:'Fraunces',serif; font-weight:700; font-size:1.1rem;
+    box-shadow:0 8px 18px -8px rgba(139,94,52,.8);
+  }
+  .lg-brand-name{ font-family:'Fraunces',serif; font-weight:600; font-size:1.12rem; line-height:1.15; }
+  .lg-brand-app{ font-size:.78rem; color:var(--ink-soft); }
+
+  .lg-tabs{ position:relative; display:grid; grid-template-columns:1fr 1fr; padding:.25rem; border-radius:.9rem; background:rgba(46,42,34,.08); margin-bottom:1.35rem; }
+  .lg-thumb{
+    position:absolute; top:.25rem; bottom:.25rem; left:.25rem; width:calc(50% - .25rem); border-radius:.7rem; background:#fff;
+    box-shadow:0 3px 10px -3px rgba(46,42,34,.3);
+    transition:transform .45s cubic-bezier(.3,1.25,.4,1);
+  }
+  .lg-root[data-role="owner"] .lg-thumb{ transform:translateX(100%); }
+  .lg-tab{
+    position:relative; z-index:1; display:flex; align-items:center; justify-content:center; gap:.45rem;
+    padding:.6rem .5rem; border:0; background:none; border-radius:.7rem; cursor:pointer;
+    font:600 .9rem 'Inter',sans-serif; color:var(--ink-soft); transition:color .3s ease;
+  }
+  .lg-tab[aria-selected="true"]{ color:var(--accent); }
+  .lg-tab:focus-visible, .lg-eye:focus-visible, .lg-submit:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+
+  .lg-head h1{ font-family:'Fraunces',serif; font-weight:600; font-size:1.7rem; line-height:1.15; margin:0; letter-spacing:-.01em; }
+  .lg-head p{ margin:.35rem 0 1.4rem; font-size:.92rem; color:var(--ink-soft); min-height:1.3em; }
+
+  .lg-field{ margin-bottom:1rem; }
+  .lg-field label{ display:block; font-size:.82rem; font-weight:600; margin-bottom:.4rem; }
+  .lg-wrap{ position:relative; }
+  .lg-wrap > svg{ position:absolute; left:.95rem; top:50%; transform:translateY(-50%); color:var(--ink-soft); pointer-events:none; transition:color .2s ease; }
+  .lg-wrap input{
+    width:100%; height:3rem; border:1.5px solid rgba(46,42,34,.2); border-radius:.8rem; background:#fff;
+    padding:0 1rem 0 2.7rem; color:var(--ink); outline:0;
+    transition:border-color .2s ease, box-shadow .2s ease;
+  }
+  .lg-wrap input:focus{ border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft); }
+  .lg-wrap:focus-within > svg{ color:var(--accent); }
+  .lg-card.has-error .lg-wrap input{ border-color:#B3382C; }
+  #loginPassword{ padding-right:3rem; }
+  .lg-eye{ position:absolute; right:.4rem; top:50%; transform:translateY(-50%); width:2.3rem; height:2.3rem; display:grid; place-items:center; border:0; background:none; color:var(--ink-soft); border-radius:.6rem; cursor:pointer; }
+  .lg-eye:hover{ color:var(--accent); }
+  .lg-eye .off{ display:none; }
+  .lg-eye[aria-pressed="true"] .on{ display:none; }
+  .lg-eye[aria-pressed="true"] .off{ display:block; }
+
+  .lg-note{ font-size:.8rem; min-height:1.2rem; margin:-.2rem 0 .7rem; }
+  .lg-note p{ margin:0; }
+  .lg-caps{ color:#8a6a12; display:none; }
+  .lg-caps.show{ display:block; }
+  .lg-error{ color:#B3382C; font-weight:500; display:none; }
+  .lg-error.show{ display:block; }
+
+  .lg-submit{
+    position:relative; overflow:hidden; width:100%; height:3.1rem; border:0; border-radius:.85rem; cursor:pointer;
+    background:var(--accent); color:#fff; font:600 1rem 'Inter',sans-serif;
+    box-shadow:0 14px 24px -14px var(--accent);
+    transition:background .6s ease, transform .15s ease, box-shadow .25s ease;
+  }
+  .lg-submit:hover{ transform:translateY(-1px); box-shadow:0 18px 28px -14px var(--accent); }
+  .lg-submit:active{ transform:translateY(1px); }
+  .lg-submit::before{ content:""; position:absolute; inset:0 auto 0 0; width:0; background:rgba(255,255,255,.24); }
+  .lg-submit.loading{ pointer-events:none; }
+  .lg-submit.loading::before{ animation:fillbar .75s cubic-bezier(.4,0,.2,1) forwards; }
+  @keyframes fillbar{ to{ width:100%; } }
+  .lg-submit > span{ position:relative; display:inline-flex; align-items:center; gap:.55rem; }
+  .spin{ width:1rem; height:1rem; border-radius:50%; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; animation:spin .7s linear infinite; display:none; }
+  .lg-submit.loading .spin{ display:block; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .lg-foot{ margin:1.1rem 0 0; font-size:.76rem; color:var(--ink-soft); text-align:center; }
+
+  .lg-fade{ position:fixed; inset:0; z-index:9; background:#F5EEDC; opacity:0; pointer-events:none; transition:opacity .45s ease; }
+  .lg-root.out .lg-fade{ opacity:1; }
+
+  @media (max-width:480px){ .lg-head h1{ font-size:1.5rem; } }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{ animation:none !important; transition-duration:.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="lg-root" id="root" data-role="cashier">
+
+  <!-- ============ SCENE ============ -->
+  <div class="scene" aria-hidden="true">
+    <div class="sky sky-day"></div>
+    <div class="sky sky-dusk"></div>
+    <div class="stars" id="stars"></div>
+    <div class="sun-wrap"><div class="sun"></div></div>
+    <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+    <div class="hills">
+      <svg viewBox="0 0 1440 500" preserveAspectRatio="none">
+        <path class="h-far"  d="M0 210 C 180 120, 340 150, 520 190 S 860 90, 1040 150 S 1330 190, 1440 130 L1440 500 L0 500Z"/>
+        <path class="h-mid"  d="M0 290 C 160 230, 380 270, 560 250 S 900 200, 1100 260 S 1350 280, 1440 240 L1440 500 L0 500Z"/>
+        <path class="h-near" d="M0 370 C 220 320, 420 360, 640 340 S 1000 300, 1200 350 S 1380 360, 1440 330 L1440 500 L0 500Z"/>
+      </svg>
+    </div>
+    <div class="field field-back"><svg id="fieldBack" viewBox="0 0 1440 220" preserveAspectRatio="xMidYMax slice"></svg></div>
+    <div class="grains" id="grains"></div>
+    <div class="field field-front"><svg id="fieldFront" viewBox="0 0 1440 220" preserveAspectRatio="xMidYMax slice"></svg></div>
+  </div>
+
+  <!-- ============ CONTENT ============ -->
+  <main class="lg-stage">
+    <section class="lg-hero" id="hero" aria-live="polite">
+      <h2 id="heroTitle">Every sack counted, every sale in its place.</h2>
+      <p id="heroSub">The till for the front of the shop.</p>
+    </section>
+
+    <div class="lg-card" id="card">
+      <div class="lg-brand">
+        <div class="lg-logo">NG</div>
+        <div>
+          <div class="lg-brand-name">Navarra Grain Center</div>
+          <div class="lg-brand-app">RiceTracker</div>
+        </div>
+      </div>
+
+      <div class="lg-tabs" role="tablist" aria-label="Sign in as">
+        <div class="lg-thumb" aria-hidden="true"></div>
+        <button type="button" class="lg-tab" role="tab" data-role="cashier" aria-selected="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+          Cashier
+        </button>
+        <button type="button" class="lg-tab" role="tab" data-role="owner" aria-selected="false">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>
+          Owner
+        </button>
+      </div>
+
+      <div class="lg-head">
+        <h1 id="greeting">Welcome back</h1>
+        <p id="roleTagline">Sign in to start ringing up sales.</p>
+      </div>
+
+      <form id="loginForm" novalidate>
+        <div class="lg-field">
+          <label for="loginUsername">Username</label>
+          <div class="lg-wrap">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg>
+            <input required id="loginUsername" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" />
+          </div>
+        </div>
+        <div class="lg-field">
+          <label for="loginPassword">Password</label>
+          <div class="lg-wrap">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            <input required id="loginPassword" type="password" autocomplete="current-password" />
+            <button type="button" class="lg-eye" id="eyeBtn" aria-label="Show password" aria-pressed="false">
+              <svg class="on" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.9 17.9A10.9 10.9 0 0 1 12 19C5 19 1 12 1 12a18.5 18.5 0 0 1 5.1-5.9M9.9 4.2A9.7 9.7 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.2 3.2"/><path d="M1 1l22 22"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="lg-note" aria-live="polite">
+          <p id="capsNote" class="lg-caps">Caps Lock is on.</p>
+          <p id="loginError" class="lg-error" role="alert">Incorrect username or password. Check both and try again.</p>
+        </div>
+
+        <button type="submit" class="lg-submit" id="submitBtn">
+          <span><i class="spin"></i><span id="submitLabel">Sign in</span></span>
+        </button>
+      </form>
+
+      <p class="lg-foot">Sales and stock are saved on this device.</p>
+    </div>
+  </main>
+
+  <div class="lg-fade"></div>
+</div>
+
+<script>
+/* ============================================================
+   ROLE CONFIG — matches the auth/session keys each app already
+   uses, so signing in here and landing on the app's homepage
+   skips that app's own login screen entirely.
+   ============================================================ */
+const ROLES = {
+  cashier: {
+    label: 'Cashier Till',
+    tagline: 'Sign in to start ringing up sales.',
+    heroTitle: 'Every sack counted, every sale in its place.',
+    heroSub: 'The till for the front of the shop.',
+    authKey: 'ricetrack_cashier_auth_v1',
+    sessionAuthKey: 'ricetrack_cashier_session_v1',
+    sessionUserKey: 'ricetrack_cashier_session_user_v1',
+    defaults: { username: 'cashier', password: 'cashier123' },
+    redirect: 'ricetrack-cashier.html'
+  },
+  owner: {
+    label: 'Owner Dashboard',
+    tagline: 'Sign in to see how the store is doing.',
+    heroTitle: 'Stock, sales and margins, at a glance.',
+    heroSub: 'Everything the store did, in one place.',
+    authKey: 'ricetrack_owner_auth_v1',
+    sessionAuthKey: 'ricetrack_owner_session_v1',
+    sessionUserKey: 'ricetrack_owner_session_user_v1',
+    defaults: { username: 'owner', password: 'owner123' },
+    redirect: 'ricetrack-owner.html'
+  }
+};
+
+let currentRole = 'cashier';
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const root = document.getElementById('root');
+const card = document.getElementById('card');
+const errEl = document.getElementById('loginError');
+const submitBtn = document.getElementById('submitBtn');
+
+function getAuthCreds(role){
+  const cfg = ROLES[role];
+  try{
+    const raw = localStorage.getItem(cfg.authKey);
+    if(raw) return JSON.parse(raw);
+  }catch(e){ /* fall through to default */ }
+  try{ localStorage.setItem(cfg.authKey, JSON.stringify(cfg.defaults)); }catch(e){}
+  return cfg.defaults;
+}
+
+/* ---------- greeting by time of day ---------- */
+(function(){
+  const h = new Date().getHours();
+  document.getElementById('greeting').textContent =
+    h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+})();
+
+/* ============================================================
+   SCENE BUILDERS
+   ============================================================ */
+function rng(seed){ return () => (seed = (seed * 16807) % 2147483647) / 2147483647; }
+
+function buildField(svgId, count, seed, hMin, hMax, swayMin, swayMax){
+  const r = rng(seed), W = 1440, base = 220, out = [];
+  for(let i = 0; i < count; i++){
+    const x = (i + r() * 0.8) * (W / count);
+    const h = hMin + r() * (hMax - hMin);
+    const lean = (r() - 0.5) * 56;
+    const c = { x: x + lean * 0.2, y: base - h * 0.65 };
+    const tip = { x: x + lean, y: base - h };
+    let heads = '';
+    for(let k = 0; k < 7; k++){
+      const t = 0.7 + k * 0.045;
+      const px = (1-t)*(1-t)*x + 2*(1-t)*t*c.x + t*t*tip.x;
+      const py = (1-t)*(1-t)*base + 2*(1-t)*t*c.y + t*t*tip.y;
+      const side = k % 2 ? 1 : -1;
+      heads += `<ellipse class="head" cx="${(px + side*3.4).toFixed(1)}" cy="${py.toFixed(1)}" rx="3" ry="7" transform="rotate(${side*32} ${px.toFixed(1)} ${py.toFixed(1)})"/>`;
+    }
+    const dur = (swayMin + r() * (swayMax - swayMin)).toFixed(2);
+    const delay = (-r() * 6).toFixed(2);
+    out.push(`<g class="sw" style="animation-duration:${dur}s;animation-delay:${delay}s">
+      <path class="stem" stroke-width="2.2" d="M${x.toFixed(1)} ${base} Q${c.x.toFixed(1)} ${c.y.toFixed(1)} ${tip.x.toFixed(1)} ${tip.y.toFixed(1)}"/>${heads}</g>`);
+  }
+  document.getElementById(svgId).innerHTML = out.join('');
+}
+buildField('fieldBack', 46, 11, 70, 130, 5.5, 8);
+buildField('fieldFront', 34, 29, 105, 190, 4, 6.5);
+
+(function(){
+  const r = rng(7);
+  document.getElementById('stars').innerHTML = Array.from({length: 28}, () =>
+    `<i style="left:${(r()*100).toFixed(1)}%;top:${(r()*100).toFixed(1)}%;animation-delay:${(-r()*4).toFixed(2)}s;transform:scale(${(0.6 + r()).toFixed(2)})"></i>`).join('');
+  if(reduceMotion) return;
+  document.getElementById('grains').innerHTML = Array.from({length: 16}, () =>
+    `<b style="left:${(r()*100).toFixed(1)}%;animation-duration:${(11 + r()*12).toFixed(1)}s;animation-delay:${(-r()*20).toFixed(1)}s"></b>`).join('');
+})();
+
+/* gentle parallax that follows the pointer */
+if(!reduceMotion && window.matchMedia('(pointer:fine)').matches){
+  let ticking = false, nx = 0;
+  window.addEventListener('pointermove', (e) => {
+    nx = (e.clientX / window.innerWidth) * 2 - 1;
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => { root.style.setProperty('--mx', nx.toFixed(3)); ticking = false; });
+  });
+}
+
+/* ============================================================
+   ROLE SWITCHING
+   ============================================================ */
+function setRole(role){
+  const changed = role !== currentRole;
+  currentRole = role;
+  const cfg = ROLES[role];
+  root.dataset.role = role;
+  document.querySelectorAll('.lg-tab').forEach(tab => {
+    const on = tab.dataset.role === role;
+    tab.setAttribute('aria-selected', on ? 'true' : 'false');
+    tab.tabIndex = on ? 0 : -1;
+  });
+  document.getElementById('roleTagline').textContent = cfg.tagline;
+  const hero = document.getElementById('hero');
+  const applyHero = () => {
+    document.getElementById('heroTitle').textContent = cfg.heroTitle;
+    document.getElementById('heroSub').textContent = cfg.heroSub;
+    hero.classList.remove('swap');
+  };
+  if(changed && !reduceMotion){ hero.classList.add('swap'); setTimeout(applyHero, 230); } else { applyHero(); }
+  errEl.classList.remove('show');
+  card.classList.remove('has-error');
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', role === 'owner' ? '#223A29' : '#2E2A22');
+}
+
+document.querySelectorAll('.lg-tab').forEach(tab => {
+  tab.addEventListener('click', () => setRole(tab.dataset.role));
+  tab.addEventListener('keydown', (e) => {
+    if(e.key === 'ArrowRight' || e.key === 'ArrowLeft'){
+      const next = currentRole === 'cashier' ? 'owner' : 'cashier';
+      setRole(next);
+      document.querySelector(`.lg-tab[data-role="${next}"]`).focus();
+    }
+  });
+});
+
+/* ============================================================
+   FORM
+   ============================================================ */
+const pw = document.getElementById('loginPassword');
+const eyeBtn = document.getElementById('eyeBtn');
+eyeBtn.addEventListener('click', () => {
+  const show = pw.type === 'password';
+  pw.type = show ? 'text' : 'password';
+  eyeBtn.setAttribute('aria-pressed', show ? 'true' : 'false');
+  eyeBtn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+  pw.focus();
+});
+const capsNote = document.getElementById('capsNote');
+['keydown','keyup'].forEach(ev => pw.addEventListener(ev, (e) => {
+  if(e.getModifierState) capsNote.classList.toggle('show', e.getModifierState('CapsLock'));
+}));
+pw.addEventListener('blur', () => capsNote.classList.remove('show'));
+document.querySelectorAll('#loginForm input').forEach(i => i.addEventListener('input', () => {
+  errEl.classList.remove('show'); card.classList.remove('has-error');
+}));
+
+function failLogin(){
+  errEl.classList.remove('show'); void errEl.offsetWidth; errEl.classList.add('show');
+  card.classList.add('has-error');
+  card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+  pw.select();
+}
+card.addEventListener('animationend', (e) => { if(e.animationName === 'shake') card.classList.remove('shake'); });
+
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const cfg = ROLES[currentRole];
+  const creds = getAuthCreds(currentRole);
+  const u = document.getElementById('loginUsername').value.trim();
+  const p = pw.value;
+  if(!(u === creds.username && p === creds.password)){ failLogin(); return; }
+
+  try{
+    sessionStorage.setItem(cfg.sessionAuthKey, '1');
+    sessionStorage.setItem(cfg.sessionUserKey, u);
+  }catch(err){}
+
+  if(reduceMotion){ window.location.href = cfg.redirect; return; }
+
+  /* success: bar fills, card lifts away, sun climbs, screen fades into the app */
+  submitBtn.classList.add('loading');
+  document.getElementById('submitLabel').textContent = 'Signing in';
+  setTimeout(() => { root.classList.add('leaving'); }, 650);
+  setTimeout(() => { root.classList.add('out'); }, 1250);
+  setTimeout(() => { window.location.href = cfg.redirect; }, 1650);
+});
+
+setRole('cashier');
+if(window.matchMedia('(hover:hover)').matches){
+  setTimeout(() => document.getElementById('loginUsername').focus({ preventScroll:true }), 1300);
+}
+</script>
+<script>
+  if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
+</script>
+</body>
+</html>

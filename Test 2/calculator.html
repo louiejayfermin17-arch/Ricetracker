@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#2E2A22" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="RiceTracker" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<title>Calculator — RiceTracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ricetrack.css">
+<style>
+  body{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:1rem;
+  }
+  .calc-shell{
+    width:100%;
+    max-width:22rem;
+  }
+  .calc-back{
+    display:inline-flex;
+    align-items:center;
+    gap:0.4rem;
+    font-family:'Inter',sans-serif;
+    font-size:0.85rem;
+    font-weight:600;
+    color:var(--ink-soft);
+    text-decoration:none;
+    margin-bottom:0.9rem;
+  }
+  .calc-back:hover{ color:var(--ink); }
+  .calc-card{
+    background:var(--paper);
+    border:1px solid var(--rule);
+    border-radius:1rem;
+    padding:1.25rem;
+    box-shadow:0 20px 45px -20px rgba(46,42,34,0.35);
+  }
+  .calc-card h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:1.15rem;
+    color:var(--ink);
+    margin:0 0 0.9rem;
+  }
+  #calcDisplay{
+    font-family:'IBM Plex Mono',monospace;
+    letter-spacing:0.02em;
+    text-align:right;
+    font-size:1.9rem;
+    background:rgba(245,238,220,0.5);
+    border:1px solid var(--rule);
+    border-radius:0.6rem;
+    padding:0.9rem 0.9rem;
+    margin-bottom:0.9rem;
+    overflow-x:auto;
+    white-space:nowrap;
+    color:var(--ink);
+  }
+  .calc-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:0.5rem;
+  }
+  .calc-btn{
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 0.6rem;
+    padding: 0.95rem 0;
+    font-family:'Inter',sans-serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--ink);
+    cursor:pointer;
+    transition: background-color .15s ease, transform .15s ease, box-shadow .15s ease;
+  }
+  .calc-btn:hover{ background: var(--cream); }
+  .calc-btn:active{ transform: translateY(1px); }
+  .calc-btn.calc-op{ color: var(--ink-soft); }
+  .calc-btn.calc-op-accent{ background: rgba(193,101,47,0.08); color: var(--terracotta); border-color: rgba(193,101,47,0.25); }
+  .calc-btn.calc-op-accent:hover{ background: rgba(193,101,47,0.16); }
+  .calc-btn.calc-op-accent.calc-active{ background: var(--terracotta); color: #fff; }
+  .calc-btn.calc-equals{ background: var(--terracotta); color: #fff; border-color: var(--terracotta); }
+  .calc-btn.calc-equals:hover{ opacity: .9; }
+  .calc-btn.calc-span-2{ grid-column: span 2 / span 2; }
+</style>
+</head>
+<body>
+
+  <div class="calc-shell">
+    <a class="calc-back" href="ricetrack-cashier.html">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Back to Till
+    </a>
+    <div class="calc-card">
+      <h1>Calculator</h1>
+      <div id="calcDisplay">0</div>
+      <div class="calc-grid">
+        <button type="button" class="calc-btn calc-op" data-action="clear">C</button>
+        <button type="button" class="calc-btn calc-op" data-action="backspace" aria-label="Backspace">⌫</button>
+        <button type="button" class="calc-btn calc-op" data-action="percent">%</button>
+        <button type="button" class="calc-btn calc-op-accent" data-action="op" data-value="/">÷</button>
+
+        <button type="button" class="calc-btn" data-digit="7">7</button>
+        <button type="button" class="calc-btn" data-digit="8">8</button>
+        <button type="button" class="calc-btn" data-digit="9">9</button>
+        <button type="button" class="calc-btn calc-op-accent" data-action="op" data-value="*">×</button>
+
+        <button type="button" class="calc-btn" data-digit="4">4</button>
+        <button type="button" class="calc-btn" data-digit="5">5</button>
+        <button type="button" class="calc-btn" data-digit="6">6</button>
+        <button type="button" class="calc-btn calc-op-accent" data-action="op" data-value="-">−</button>
+
+        <button type="button" class="calc-btn" data-digit="1">1</button>
+        <button type="button" class="calc-btn" data-digit="2">2</button>
+        <button type="button" class="calc-btn" data-digit="3">3</button>
+        <button type="button" class="calc-btn calc-op-accent" data-action="op" data-value="+">+</button>
+
+        <button type="button" class="calc-btn calc-span-2" data-digit="0">0</button>
+        <button type="button" class="calc-btn" data-action="decimal">.</button>
+        <button type="button" class="calc-btn calc-equals" data-action="equals">=</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ============================================================
+   CALCULATOR
+   ============================================================ */
+(function(){
+  const display = document.getElementById('calcDisplay');
+  const opButtons = document.querySelectorAll('.calc-op-accent[data-value]');
+
+  let current = '0';
+  let previous = null;
+  let operator = null;
+  let resetNext = false;
+
+  function render(){
+    display.textContent = current;
+    opButtons.forEach(btn => {
+      btn.classList.toggle('calc-active', operator === btn.dataset.value && resetNext);
+    });
+  }
+
+  function inputDigit(d){
+    if(resetNext){ current = '0'; resetNext = false; }
+    if(d === '.'){
+      if(current.includes('.')) return;
+      current += '.';
+    }else if(current === '0'){
+      current = d;
+    }else{
+      if(current.replace('-','').replace('.','').length >= 14) return;
+      current += d;
+    }
+    render();
+  }
+
+  function clearAll(){
+    current = '0'; previous = null; operator = null; resetNext = false;
+    render();
+  }
+
+  function backspace(){
+    if(resetNext) return;
+    current = current.length > 1 ? current.slice(0, -1) : '0';
+    if(current === '-') current = '0';
+    render();
+  }
+
+  function trimNumber(n){
+    if(!isFinite(n)) return 'Error';
+    return String(+n.toFixed(10));
+  }
+
+  function percent(){
+    const pct = parseFloat(current) / 100;
+    if((operator === '+' || operator === '-') && previous !== null){
+      // e.g. 500 − 20% should mean "20% of 500", not "0.2"
+      current = trimNumber(parseFloat(previous) * pct);
+    }else{
+      current = trimNumber(pct);
+    }
+    render();
+  }
+
+  function compute(){
+    if(operator === null || previous === null) return;
+    const a = parseFloat(previous), b = parseFloat(current);
+    let result;
+    switch(operator){
+      case '+': result = a + b; break;
+      case '-': result = a - b; break;
+      case '*': result = a * b; break;
+      case '/': result = b === 0 ? NaN : a / b; break;
+      default: return;
+    }
+    current = trimNumber(result);
+    operator = null;
+    previous = null;
+    resetNext = true;
+    render();
+  }
+
+  function setOperator(op){
+    if(operator !== null && !resetNext) compute();
+    previous = current;
+    operator = op;
+    resetNext = true;
+    render();
+  }
+
+  document.querySelectorAll('.calc-btn[data-digit]').forEach(btn => {
+    btn.addEventListener('click', () => inputDigit(btn.dataset.digit));
+  });
+  document.querySelector('[data-action="decimal"]').addEventListener('click', () => inputDigit('.'));
+  document.querySelector('[data-action="clear"]').addEventListener('click', clearAll);
+  document.querySelector('[data-action="backspace"]').addEventListener('click', backspace);
+  document.querySelector('[data-action="percent"]').addEventListener('click', percent);
+  opButtons.forEach(btn => btn.addEventListener('click', () => setOperator(btn.dataset.value)));
+  document.querySelector('[data-action="equals"]').addEventListener('click', compute);
+
+  document.addEventListener('keydown', (e) => {
+    if(e.key >= '0' && e.key <= '9'){ inputDigit(e.key); }
+    else if(e.key === '.'){ inputDigit('.'); }
+    else if(['+','-','*','/'].includes(e.key)){ setOperator(e.key); }
+    else if(e.key === 'Enter' || e.key === '='){ e.preventDefault(); compute(); }
+    else if(e.key === 'Backspace'){ backspace(); }
+    else if(e.key === '%'){ percent(); }
+  });
+
+  render();
+})();
+</script>
+<script>
+  if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
+</script>
+</body>
+</html>
